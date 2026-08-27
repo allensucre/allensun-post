@@ -1,0 +1,945 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout
+  title="Writing Admin"
+  description="Local writing workspace for Markdown blog posts."
+>
+  <main class="admin-shell">
+    <header class="admin-topbar">
+      <div>
+        <p class="eyebrow">Local writing workspace</p>
+        <h1>Writing Admin</h1>
+      </div>
+      <div class="topbar-actions">
+        <a class="ghost-link" href="/posts/">View posts</a>
+        <button id="posts-mode-button" type="button">Posts</button>
+        <button id="settings-mode-button" class="ghost-button" type="button">
+          Settings
+        </button>
+        <button id="new-post-button" type="button">New post</button>
+      </div>
+    </header>
+
+    <section class="admin-grid">
+      <aside class="post-browser" aria-label="Post browser">
+        <div class="browser-tools">
+          <label>
+            Search
+            <input id="search-input" type="search" placeholder="Title, tag, path" />
+          </label>
+          <label>
+            Status
+            <select id="status-filter">
+              <option value="all">All posts</option>
+              <option value="draft">Drafts</option>
+              <option value="published">Published</option>
+            </select>
+          </label>
+        </div>
+        <div class="browser-meta">
+          <span id="post-count">0 posts</span>
+          <span id="api-state">Connecting</span>
+        </div>
+        <div id="post-list" class="post-list" role="list"></div>
+      </aside>
+
+      <section class="editor-panel" aria-label="Post editor">
+        <form id="editor-form" class="editor-form admin-view" data-view="posts">
+          <div class="form-row title-row">
+            <label>
+              Title
+              <input id="title-input" name="title" required />
+            </label>
+            <label class="draft-toggle">
+              <input id="draft-input" name="draft" type="checkbox" />
+              Draft
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label>
+              Description
+              <textarea id="description-input" name="description" rows="2"></textarea>
+            </label>
+          </div>
+
+          <div class="form-row split-row">
+            <label>
+              Published time
+              <input id="date-input" name="pubDatetime" type="text" />
+            </label>
+            <label>
+              Tags
+              <input id="tags-input" name="tags" placeholder="产品, 社区, 随想" />
+            </label>
+          </div>
+
+          <div class="file-line">
+            <span id="file-path">No post selected</span>
+            <a id="preview-link" href="/posts/" target="_blank" rel="noreferrer">
+              Preview
+            </a>
+          </div>
+
+          <div class="workspace-tabs" role="tablist" aria-label="Editor mode">
+            <button type="button" class="active" data-mode="edit">Edit</button>
+            <button type="button" data-mode="preview">Preview</button>
+            <button type="button" data-mode="split">Split</button>
+          </div>
+
+          <div class="writing-surface" data-mode="edit">
+            <textarea
+              id="body-input"
+              name="body"
+              spellcheck="false"
+              placeholder="Start writing Markdown..."
+            ></textarea>
+            <article id="markdown-preview" class="markdown-preview"></article>
+          </div>
+
+          <footer class="editor-actions">
+            <p id="save-state" aria-live="polite">Ready</p>
+            <button id="save-button" type="submit">Save</button>
+          </footer>
+        </form>
+
+        <form id="settings-form" class="settings-form admin-view" data-view="settings" hidden>
+          <div class="settings-heading">
+            <div>
+              <p class="eyebrow">Site settings</p>
+              <h2>Homepage, identity, and links</h2>
+            </div>
+            <button id="save-settings-button" type="submit">Save settings</button>
+          </div>
+
+          <div class="settings-grid">
+            <label>
+              Site title
+              <input id="setting-title" name="title" />
+            </label>
+            <label>
+              Author
+              <input id="setting-author" name="author" />
+            </label>
+            <label>
+              Website URL
+              <input id="setting-website" name="website" />
+            </label>
+            <label>
+              Profile URL
+              <input id="setting-profile" name="profile" />
+            </label>
+          </div>
+
+          <label>
+            Site description
+            <textarea id="setting-desc" rows="2"></textarea>
+          </label>
+
+          <label>
+            Homepage heading
+            <input id="setting-home-heading" />
+          </label>
+          <label>
+            Homepage intro
+            <textarea id="setting-home-intro" rows="4"></textarea>
+          </label>
+          <label>
+            Homepage secondary paragraph
+            <textarea id="setting-home-secondary" rows="3"></textarea>
+          </label>
+          <label>
+            Social label
+            <input id="setting-social-label" />
+          </label>
+
+          <label>
+            Social links JSON
+            <textarea id="setting-socials" rows="8" spellcheck="false"></textarea>
+          </label>
+
+          <label>
+            About page title
+            <input id="setting-about-title" />
+          </label>
+          <label>
+            About page body
+            <textarea id="setting-about-body" rows="12" spellcheck="false"></textarea>
+          </label>
+
+          <p id="settings-state" aria-live="polite">Settings ready</p>
+        </form>
+      </section>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  :global(body) {
+    min-width: 320px;
+  }
+
+  .admin-shell {
+    min-height: 100vh;
+    background: #f6f5f1;
+    color: #242424;
+    padding: 24px;
+  }
+
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 1440px;
+    margin: 0 auto 20px;
+  }
+
+  .eyebrow {
+    margin: 0 0 4px;
+    color: #68645d;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    line-height: 1.1;
+  }
+
+  .topbar-actions,
+  .editor-actions,
+  .file-line,
+  .browser-meta,
+  .workspace-tabs {
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar-actions {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  button,
+  .ghost-link,
+  .ghost-button {
+    min-height: 40px;
+    border: 1px solid #242424;
+    border-radius: 6px;
+    background: #242424;
+    color: #fff;
+    padding: 0 14px;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ghost-link,
+  .ghost-button,
+  .workspace-tabs button {
+    background: transparent;
+    color: #242424;
+  }
+
+  .topbar-actions button.active {
+    background: #242424;
+    color: #fff;
+  }
+
+  .admin-grid {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .post-browser,
+  .editor-panel {
+    border: 1px solid #d8d2c7;
+    border-radius: 8px;
+    background: #fffdfa;
+    min-height: calc(100vh - 128px);
+  }
+
+  .post-browser {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .browser-tools {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #e5ded2;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+    color: #5f5a52;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid #d8d2c7;
+    border-radius: 6px;
+    background: #fff;
+    color: #242424;
+    font: inherit;
+    padding: 10px 11px;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  .browser-meta {
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 16px;
+    color: #68645d;
+    border-bottom: 1px solid #e5ded2;
+    font-size: 0.78rem;
+  }
+
+  .post-list {
+    overflow: auto;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  :global(.post-item) {
+    width: 100%;
+    min-height: 72px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    align-content: center;
+    justify-content: stretch;
+    justify-items: stretch;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #242424;
+    padding: 10px 12px;
+    text-align: left;
+    font: inherit;
+  }
+
+  :global(.post-item:hover),
+  :global(.post-item.active) {
+    border-color: #c8bba9;
+    background: #f7efe3;
+  }
+
+  :global(.post-title),
+  :global(.post-meta) {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  :global(.post-title) {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  :global(.post-meta) {
+    color: #746e64;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .editor-panel {
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  .editor-form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .settings-form {
+    min-height: 100%;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+  }
+
+  .settings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #e5ded2;
+    padding-bottom: 14px;
+  }
+
+  .settings-heading h2 {
+    margin: 0;
+    color: #242424;
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  #setting-socials,
+  #setting-about-body {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    line-height: 1.55;
+  }
+
+  .form-row {
+    display: grid;
+    gap: 12px;
+  }
+
+  .title-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .split-row {
+    grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr);
+  }
+
+  .draft-toggle {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d8d2c7;
+    border-radius: 6px;
+    padding: 0 12px;
+    color: #242424;
+  }
+
+  .draft-toggle input {
+    width: auto;
+  }
+
+  .file-line {
+    justify-content: space-between;
+    gap: 12px;
+    color: #68645d;
+    font-size: 0.82rem;
+  }
+
+  #file-path {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #preview-link {
+    color: #005f8f;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .workspace-tabs {
+    gap: 8px;
+  }
+
+  .workspace-tabs button {
+    min-height: 34px;
+    border-color: #d8d2c7;
+    padding: 0 12px;
+  }
+
+  .workspace-tabs button.active {
+    border-color: #242424;
+    background: #242424;
+    color: #fff;
+  }
+
+  .writing-surface {
+    min-height: 420px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .writing-surface[data-mode="edit"] {
+    grid-template-columns: 1fr;
+  }
+
+  .writing-surface[data-mode="preview"] {
+    grid-template-columns: 1fr;
+  }
+
+  .writing-surface[data-mode="edit"] .markdown-preview,
+  .writing-surface[data-mode="preview"] #body-input {
+    display: none;
+  }
+
+  #body-input,
+  .markdown-preview {
+    min-height: 100%;
+    border: 1px solid #d8d2c7;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  #body-input {
+    resize: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    line-height: 1.65;
+  }
+
+  .markdown-preview {
+    overflow: auto;
+    padding: 18px;
+    line-height: 1.75;
+  }
+
+  .markdown-preview :global(h1),
+  .markdown-preview :global(h2),
+  .markdown-preview :global(h3) {
+    margin: 1.2em 0 0.5em;
+    line-height: 1.25;
+  }
+
+  .markdown-preview :global(p) {
+    margin: 0.8em 0;
+  }
+
+  .markdown-preview :global(code) {
+    background: #f0ece5;
+    border-radius: 4px;
+    padding: 0.1em 0.3em;
+  }
+
+  .markdown-preview :global(pre) {
+    overflow: auto;
+    background: #242424;
+    color: #fff;
+    border-radius: 6px;
+    padding: 14px;
+  }
+
+  .editor-actions {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  #save-state,
+  #settings-state {
+    margin: 0;
+    color: #68645d;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 900px) {
+    .admin-shell {
+      padding: 16px;
+    }
+
+    .admin-topbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .admin-grid,
+    .settings-grid,
+    .split-row,
+    .title-row {
+      grid-template-columns: 1fr;
+    }
+
+    .settings-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .post-browser,
+    .editor-panel {
+      min-height: auto;
+    }
+
+    .post-list {
+      max-height: 320px;
+    }
+
+    .writing-surface,
+    .writing-surface[data-mode="split"] {
+      grid-template-columns: 1fr;
+    }
+
+    .writing-surface[data-mode="split"] #body-input,
+    .writing-surface[data-mode="split"] .markdown-preview {
+      min-height: 320px;
+    }
+  }
+</style>
+
+<script>
+  // @ts-nocheck
+  const state = {
+    posts: [],
+    selectedId: null,
+    selectedPost: null,
+    settings: null,
+    mode: "edit",
+    view: "posts",
+  };
+
+  const elements = {
+    apiState: document.querySelector("#api-state"),
+    body: document.querySelector("#body-input"),
+    date: document.querySelector("#date-input"),
+    description: document.querySelector("#description-input"),
+    draft: document.querySelector("#draft-input"),
+    filePath: document.querySelector("#file-path"),
+    form: document.querySelector("#editor-form"),
+    list: document.querySelector("#post-list"),
+    newPost: document.querySelector("#new-post-button"),
+    postsMode: document.querySelector("#posts-mode-button"),
+    postCount: document.querySelector("#post-count"),
+    preview: document.querySelector("#markdown-preview"),
+    previewLink: document.querySelector("#preview-link"),
+    saveState: document.querySelector("#save-state"),
+    search: document.querySelector("#search-input"),
+    settingsForm: document.querySelector("#settings-form"),
+    settingsMode: document.querySelector("#settings-mode-button"),
+    settingsState: document.querySelector("#settings-state"),
+    settingAboutBody: document.querySelector("#setting-about-body"),
+    settingAboutTitle: document.querySelector("#setting-about-title"),
+    settingAuthor: document.querySelector("#setting-author"),
+    settingDesc: document.querySelector("#setting-desc"),
+    settingHomeHeading: document.querySelector("#setting-home-heading"),
+    settingHomeIntro: document.querySelector("#setting-home-intro"),
+    settingHomeSecondary: document.querySelector("#setting-home-secondary"),
+    settingProfile: document.querySelector("#setting-profile"),
+    settingSocialLabel: document.querySelector("#setting-social-label"),
+    settingSocials: document.querySelector("#setting-socials"),
+    settingTitle: document.querySelector("#setting-title"),
+    settingWebsite: document.querySelector("#setting-website"),
+    status: document.querySelector("#status-filter"),
+    surface: document.querySelector(".writing-surface"),
+    tags: document.querySelector("#tags-input"),
+    title: document.querySelector("#title-input"),
+    tabs: document.querySelectorAll(".workspace-tabs button"),
+  };
+
+  const request = async (url, options = {}) => {
+    const response = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Request failed");
+    }
+
+    return data;
+  };
+
+  const escapeHtml = value =>
+    value.replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[char]);
+
+  const markdownToHtml = markdown => {
+    const lines = escapeHtml(markdown).split("\n");
+    let inCode = false;
+
+    return lines
+      .map(line => {
+        if (line.startsWith("```")) {
+          inCode = !inCode;
+          return inCode ? "<pre><code>" : "</code></pre>";
+        }
+
+        if (inCode) return `${line}\n`;
+
+        if (/^###\s+/.test(line)) return `<h3>${line.replace(/^###\s+/, "")}</h3>`;
+        if (/^##\s+/.test(line)) return `<h2>${line.replace(/^##\s+/, "")}</h2>`;
+        if (/^#\s+/.test(line)) return `<h1>${line.replace(/^#\s+/, "")}</h1>`;
+        if (/^-\s+/.test(line)) return `<p>${line}</p>`;
+        if (/^>\s+/.test(line)) return `<blockquote>${line.replace(/^>\s+/, "")}</blockquote>`;
+        if (!line.trim()) return "";
+
+        return `<p>${line}</p>`;
+      })
+      .join("\n")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>");
+  };
+
+  const postUrl = post => `/posts/${post.slug}/`;
+
+  const setStatus = message => {
+    elements.saveState.textContent = message;
+  };
+
+  const setSettingsStatus = message => {
+    elements.settingsState.textContent = message;
+  };
+
+  const setAdminView = view => {
+    state.view = view;
+    elements.form.hidden = view !== "posts";
+    elements.settingsForm.hidden = view !== "settings";
+    elements.postsMode.classList.toggle("active", view === "posts");
+    elements.settingsMode.classList.toggle("active", view === "settings");
+    elements.newPost.hidden = view !== "posts";
+
+    if (view === "settings" && !state.settings) {
+      loadSettings().catch(error => setSettingsStatus(error.message));
+    }
+  };
+
+  const renderPreview = () => {
+    elements.preview.innerHTML = markdownToHtml(elements.body.value || "");
+  };
+
+  const filteredPosts = () => {
+    const query = elements.search.value.trim().toLowerCase();
+    const status = elements.status.value;
+
+    return state.posts.filter(post => {
+      const matchesStatus =
+        status === "all" ||
+        (status === "draft" && post.draft) ||
+        (status === "published" && !post.draft);
+      const haystack = `${post.title} ${post.tags.join(" ")} ${post.filePath}`.toLowerCase();
+
+      return matchesStatus && (!query || haystack.includes(query));
+    });
+  };
+
+  const renderList = () => {
+    const posts = filteredPosts();
+    elements.postCount.textContent = `${posts.length} posts`;
+    elements.list.innerHTML = posts
+      .map(post => `
+        <button class="post-item ${post.id === state.selectedId ? "active" : ""}" data-id="${post.id}" type="button">
+          <strong class="post-title">${escapeHtml(post.title)}</strong>
+          <span class="post-meta">${escapeHtml(post.pubDatetime.slice(0, 10))} · ${post.draft ? "Draft" : "Published"}</span>
+        </button>
+      `)
+      .join("");
+  };
+
+  const populateEditor = post => {
+    state.selectedId = post.id;
+    state.selectedPost = post;
+    elements.title.value = post.title || "";
+    elements.description.value = post.description || "";
+    elements.date.value = post.pubDatetime || new Date().toISOString();
+    elements.tags.value = (post.tags || []).join(", ");
+    elements.draft.checked = Boolean(post.draft);
+    elements.body.value = post.body || "";
+    elements.filePath.textContent = post.filePath || "New post";
+    elements.previewLink.href = post.slug ? postUrl(post) : "/posts/";
+    renderPreview();
+    renderList();
+    setStatus("Ready");
+  };
+
+  const loadPost = async id => {
+    setStatus("Loading post");
+    const data = await request(`/api/admin/posts/${id}`);
+    populateEditor(data.post);
+  };
+
+  const loadPosts = async () => {
+    try {
+      elements.apiState.textContent = "Connecting";
+      const data = await request("/api/admin/posts");
+      state.posts = data.posts;
+      elements.apiState.textContent = "Local API ready";
+      renderList();
+
+      if (state.posts[0]) await loadPost(state.posts[0].id);
+    } catch (error) {
+      elements.apiState.textContent = "API unavailable";
+      elements.list.innerHTML = `
+        <p class="post-item">
+          The writing API only runs in local dev mode. Start the blog with
+          <code>corepack pnpm run dev --host 127.0.0.1</code>.
+        </p>
+      `;
+      setStatus(error.message);
+    }
+  };
+
+  const populateSettings = settings => {
+    state.settings = settings;
+    elements.settingTitle.value = settings.site?.title || "";
+    elements.settingAuthor.value = settings.site?.author || "";
+    elements.settingWebsite.value = settings.site?.website || "";
+    elements.settingProfile.value = settings.site?.profile || "";
+    elements.settingDesc.value = settings.site?.desc || "";
+    elements.settingHomeHeading.value = settings.home?.heading || "";
+    elements.settingHomeIntro.value = settings.home?.intro || "";
+    elements.settingHomeSecondary.value = settings.home?.secondary || "";
+    elements.settingSocialLabel.value = settings.home?.socialLabel || "";
+    elements.settingSocials.value = JSON.stringify(settings.socials || [], null, 2);
+    elements.settingAboutTitle.value = settings.about?.title || "";
+    elements.settingAboutBody.value = settings.about?.body || "";
+    setSettingsStatus("Settings ready");
+  };
+
+  const loadSettings = async () => {
+    setSettingsStatus("Loading settings");
+    const data = await request("/api/admin/settings");
+    populateSettings(data.settings);
+  };
+
+  const saveSettings = async () => {
+    setSettingsStatus("Saving settings");
+
+    let socials = [];
+    try {
+      socials = JSON.parse(elements.settingSocials.value || "[]");
+      if (!Array.isArray(socials)) throw new Error("Social links must be an array");
+    } catch (error) {
+      throw new Error(`Social links JSON is invalid: ${error.message}`);
+    }
+
+    const data = await request("/api/admin/settings", {
+      method: "PUT",
+      body: JSON.stringify({
+        site: {
+          title: elements.settingTitle.value.trim(),
+          author: elements.settingAuthor.value.trim(),
+          website: elements.settingWebsite.value.trim(),
+          profile: elements.settingProfile.value.trim(),
+          desc: elements.settingDesc.value.trim(),
+        },
+        home: {
+          heading: elements.settingHomeHeading.value.trim(),
+          intro: elements.settingHomeIntro.value.trim(),
+          secondary: elements.settingHomeSecondary.value.trim(),
+          socialLabel: elements.settingSocialLabel.value.trim(),
+        },
+        socials,
+        about: {
+          title: elements.settingAboutTitle.value.trim(),
+          body: elements.settingAboutBody.value,
+        },
+      }),
+    });
+
+    populateSettings(data.settings);
+    setSettingsStatus(`Saved ${new Date().toLocaleTimeString()}`);
+  };
+
+  const createDraft = async () => {
+    const now = new Date().toISOString();
+    const data = await request("/api/admin/posts", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "未命名文章",
+        description: "待补充摘要",
+        pubDatetime: now,
+        draft: true,
+        tags: ["草稿"],
+        folder: "drafts",
+        body: "# 未命名文章\n\n从这里开始写。\n",
+      }),
+    });
+
+    state.posts = [data.post, ...state.posts];
+    populateEditor(data.post);
+    setStatus("Draft created");
+  };
+
+  const saveCurrentPost = async () => {
+    if (!state.selectedId) return;
+
+    setStatus("Saving");
+    const payload = {
+      title: elements.title.value.trim(),
+      description: elements.description.value.trim(),
+      pubDatetime: elements.date.value.trim(),
+      tags: elements.tags.value.split(",").map(tag => tag.trim()).filter(Boolean),
+      draft: elements.draft.checked,
+      body: elements.body.value,
+    };
+    const data = await request(`/api/admin/posts/${state.selectedId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+
+    state.posts = state.posts.map(post => post.id === data.post.id ? data.post : post);
+    populateEditor(data.post);
+    setStatus(`Saved ${new Date().toLocaleTimeString()}`);
+  };
+
+  elements.list.addEventListener("click", event => {
+    const item = event.target.closest(".post-item[data-id]");
+    if (item) loadPost(item.dataset.id).catch(error => setStatus(error.message));
+  });
+
+  elements.search.addEventListener("input", renderList);
+  elements.status.addEventListener("change", renderList);
+  elements.body.addEventListener("input", renderPreview);
+  elements.newPost.addEventListener("click", () => {
+    setAdminView("posts");
+    createDraft().catch(error => setStatus(error.message));
+  });
+  elements.form.addEventListener("submit", event => {
+    event.preventDefault();
+    saveCurrentPost().catch(error => setStatus(error.message));
+  });
+  elements.settingsForm.addEventListener("submit", event => {
+    event.preventDefault();
+    saveSettings().catch(error => setSettingsStatus(error.message));
+  });
+  elements.postsMode.addEventListener("click", () => setAdminView("posts"));
+  elements.settingsMode.addEventListener("click", () => setAdminView("settings"));
+
+  elements.tabs.forEach(button => {
+    button.addEventListener("click", () => {
+      state.mode = button.dataset.mode;
+      elements.surface.dataset.mode = state.mode;
+      elements.tabs.forEach(tab => tab.classList.toggle("active", tab === button));
+      renderPreview();
+    });
+  });
+
+  setAdminView("posts");
+  loadPosts();
+</script>
