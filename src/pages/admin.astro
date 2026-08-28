@@ -395,11 +395,13 @@ import Layout from "@/layouts/Layout.astro";
   }
 
   .editor-panel {
+    min-height: 0;
     padding: 16px;
     overflow: hidden;
   }
 
   .editor-form {
+    min-height: 0;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -508,10 +510,12 @@ import Layout from "@/layouts/Layout.astro";
   }
 
   .writing-surface {
-    min-height: 420px;
-    flex: 1;
+    min-height: 0;
+    height: clamp(420px, calc(100vh - 360px), 760px);
+    flex: 1 1 auto;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-rows: minmax(0, 1fr);
     gap: 12px;
   }
 
@@ -530,10 +534,13 @@ import Layout from "@/layouts/Layout.astro";
 
   #body-input,
   .markdown-preview {
-    min-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
     border: 1px solid #d8d2c7;
     border-radius: 8px;
     background: #fff;
+    box-sizing: border-box;
   }
 
   #body-input {
@@ -632,6 +639,11 @@ import Layout from "@/layouts/Layout.astro";
 
   .markdown-preview :global(input[type="checkbox"]) {
     margin-right: 0.45em;
+  }
+
+  .markdown-preview :global(.preview-error) {
+    color: #9f1239;
+    font-weight: 600;
   }
 
   .editor-actions {
@@ -774,10 +786,14 @@ import Layout from "@/layouts/Layout.astro";
     gfm: true,
   });
 
-  const markdownToHtml = markdown =>
-    DOMPurify.sanitize(marked.parse(markdown || ""), {
+  const markdownToHtml = async markdown => {
+    const rawHtml = await marked.parse(markdown || "");
+    return DOMPurify.sanitize(rawHtml, {
       USE_PROFILES: { html: true },
     });
+  };
+
+  let previewRenderId = 0;
 
   const postUrl = post => `/posts/${post.slug}/`;
 
@@ -802,8 +818,17 @@ import Layout from "@/layouts/Layout.astro";
     }
   };
 
-  const renderPreview = () => {
-    elements.preview.innerHTML = markdownToHtml(elements.body.value || "");
+  const renderPreview = async () => {
+    const renderId = ++previewRenderId;
+
+    try {
+      const html = await markdownToHtml(elements.body.value || "");
+      if (renderId === previewRenderId) elements.preview.innerHTML = html;
+    } catch (error) {
+      if (renderId === previewRenderId) {
+        elements.preview.innerHTML = `<p class="preview-error">Markdown preview failed: ${escapeHtml(error.message || "Unknown error")}</p>`;
+      }
+    }
   };
 
   const filteredPosts = () => {
@@ -848,7 +873,7 @@ import Layout from "@/layouts/Layout.astro";
     elements.body.value = post.body || "";
     elements.filePath.textContent = post.filePath || "New post";
     elements.previewLink.href = post.slug ? postUrl(post) : "/posts/";
-    renderPreview();
+    void renderPreview();
     renderList();
     setStatus("Ready");
   };
@@ -1002,7 +1027,9 @@ import Layout from "@/layouts/Layout.astro";
 
   elements.search.addEventListener("input", renderList);
   elements.status.addEventListener("change", renderList);
-  elements.body.addEventListener("input", renderPreview);
+  elements.body.addEventListener("input", () => {
+    void renderPreview();
+  });
   elements.newPost.addEventListener("click", () => {
     setAdminView("posts");
     createDraft().catch(error => setStatus(error.message));
@@ -1027,7 +1054,7 @@ import Layout from "@/layouts/Layout.astro";
       elements.tabs.forEach(tab =>
         tab.classList.toggle("active", tab === button)
       );
-      renderPreview();
+      void renderPreview();
     });
   });
 
