@@ -39,10 +39,13 @@ type SiteSettings = {
     href: string;
     linkTitle: string;
   }>;
-  about: {
-    title: string;
-    body: string;
-  };
+};
+
+type EditablePage = {
+  id: string;
+  title: string;
+  body: string;
+  path: string;
 };
 
 const json = (res: any, status: number, payload: unknown) => {
@@ -64,8 +67,7 @@ const readRequestBody = async (req: any) =>
 const encodeId = (relativePath: string) =>
   Buffer.from(relativePath, "utf8").toString("base64url");
 
-const decodeId = (id: string) =>
-  Buffer.from(id, "base64url").toString("utf8");
+const decodeId = (id: string) => Buffer.from(id, "base64url").toString("utf8");
 
 const assertSafePostPath = (relativePath: string) => {
   const normalized = path.normalize(relativePath);
@@ -170,7 +172,9 @@ const formatMarkdown = ({
     `draft: ${draft ? "true" : "false"}`,
     "featured: false",
     "tags:",
-    ...(safeTags.length ? safeTags : ["旧博客"]).map(tag => `  - ${yamlString(tag)}`),
+    ...(safeTags.length ? safeTags : ["旧博客"]).map(
+      tag => `  - ${yamlString(tag)}`
+    ),
     `description: ${yamlString(description)}`,
     "---",
     "",
@@ -186,7 +190,11 @@ const walkMarkdownFiles = async (directory: string): Promise<string[]> => {
       const entryPath = path.join(directory, entry.name);
 
       if (entry.isDirectory()) return walkMarkdownFiles(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".md") && !entry.name.startsWith("_")) {
+      if (
+        entry.isFile() &&
+        entry.name.endsWith(".md") &&
+        !entry.name.startsWith("_")
+      ) {
         return [entryPath];
       }
 
@@ -222,7 +230,8 @@ const summarizePost = async (absolutePath: string): Promise<PostDetail> => {
       .split(path.sep)
       .filter(segment => !segment.startsWith("_"))
       .join("/"),
-    folder: path.dirname(relativePath) === "." ? "" : path.dirname(relativePath),
+    folder:
+      path.dirname(relativePath) === "." ? "" : path.dirname(relativePath),
     updatedAt: stat.mtime.toISOString(),
     body,
   };
@@ -274,8 +283,12 @@ const updatePost = async (id: string, payload: any) => {
   const { absolutePath } = assertSafePostPath(decodeId(id));
   const existing = await summarizePost(absolutePath);
   const title = String(payload.title ?? existing.title).trim();
-  const description = String(payload.description ?? existing.description).trim();
-  const pubDatetime = String(payload.pubDatetime ?? existing.pubDatetime).trim();
+  const description = String(
+    payload.description ?? existing.description
+  ).trim();
+  const pubDatetime = String(
+    payload.pubDatetime ?? existing.pubDatetime
+  ).trim();
   const tags = Array.isArray(payload.tags)
     ? payload.tags.map(String)
     : existing.tags;
@@ -325,20 +338,70 @@ const replaceBetween = (
   return `${source.slice(0, contentStart)}\n        ${value.trim()}\n      ${source.slice(endIndex)}`;
 };
 
+const readPage = async (): Promise<EditablePage> => {
+  const source = await fs.readFile(ABOUT_PATH, "utf8");
+  const parsed = parseFrontmatter(source);
+
+  return {
+    id: "about",
+    title: String(parsed.frontmatter.title || "About"),
+    body: parsed.body.trim(),
+    path: "src/pages/about.md",
+  };
+};
+
+const updatePage = async (payload: any): Promise<EditablePage> => {
+  const current = await readPage();
+  const title = String(payload.title ?? current.title).trim() || "About";
+  const body = String(payload.body ?? current.body).trim();
+
+  await fs.writeFile(
+    ABOUT_PATH,
+    [
+      "---",
+      "layout: ../layouts/AboutLayout.astro",
+      "title: " + JSON.stringify(title),
+      "---",
+      "",
+      body,
+      "",
+    ].join("\n"),
+    "utf8"
+  );
+
+  return readPage();
+};
+
 const readSettings = async (): Promise<SiteSettings> => {
-  const [config, constants, index, about] = await Promise.all([
+  const [config, constants, index] = await Promise.all([
     fs.readFile(CONFIG_PATH, "utf8"),
     fs.readFile(CONSTANTS_PATH, "utf8"),
     fs.readFile(INDEX_PATH, "utf8"),
-    fs.readFile(ABOUT_PATH, "utf8"),
   ]);
-  const aboutParsed = parseFrontmatter(about);
-  const heading = extractBetween(index, '<h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">', "</h1>");
-  const intro = extractBetween(index, "<!-- ADMIN:home-intro:start -->", "<!-- ADMIN:home-intro:end -->") ||
-    extractBetween(index, "<p>", "</p>");
-  const secondary = extractBetween(index, "<!-- ADMIN:home-secondary:start -->", "<!-- ADMIN:home-secondary:end -->");
-  const socialLabelMatch = index.match(/<div class="me-2 mb-1 whitespace-nowrap sm:mb-0">([^<]*)<\/div>/);
-  const socials = [...constants.matchAll(/\{\s*name:\s*"([^"]*)",\s*href:\s*"([^"]*)",\s*linkTitle:\s*`([^`]*)`,\s*icon:\s*Icon(\w+),\s*\}/g)]
+  const heading = extractBetween(
+    index,
+    '<h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">',
+    "</h1>"
+  );
+  const intro =
+    extractBetween(
+      index,
+      "<!-- ADMIN:home-intro:start -->",
+      "<!-- ADMIN:home-intro:end -->"
+    ) || extractBetween(index, "<p>", "</p>");
+  const secondary = extractBetween(
+    index,
+    "<!-- ADMIN:home-secondary:start -->",
+    "<!-- ADMIN:home-secondary:end -->"
+  );
+  const socialLabelMatch = index.match(
+    /<div class="me-2 mb-1 whitespace-nowrap sm:mb-0">([^<]*)<\/div>/
+  );
+  const socials = [
+    ...constants.matchAll(
+      /\{\s*name:\s*"([^"]*)",\s*href:\s*"([^"]*)",\s*linkTitle:\s*`([^`]*)`,\s*icon:\s*Icon(\w+),\s*\}/g
+    ),
+  ]
     .slice(0, 4)
     .map(match => ({
       name: match[1],
@@ -361,10 +424,6 @@ const readSettings = async (): Promise<SiteSettings> => {
       socialLabel: socialLabelMatch?.[1] ?? "Social Links:",
     },
     socials,
-    about: {
-      title: String(aboutParsed.frontmatter.title || "About"),
-      body: aboutParsed.body.trim(),
-    },
   };
 };
 
@@ -411,7 +470,6 @@ const updateSettings = async (payload: any) => {
     site: { ...current.site, ...(payload.site || {}) },
     home: { ...current.home, ...(payload.home || {}) },
     socials: Array.isArray(payload.socials) ? payload.socials : current.socials,
-    about: { ...current.about, ...(payload.about || {}) },
   };
 
   let config = await fs.readFile(CONFIG_PATH, "utf8");
@@ -445,28 +503,13 @@ const updateSettings = async (payload: any) => {
 
   let constants = await fs.readFile(CONSTANTS_PATH, "utf8");
   constants = constants.replace(
-    /export const SOCIALS: Social\[\] = \[[\s\S]*?\] as const;/,
+    /export const SOCIALS: Social\[\] = \[\s\S]*?\] as const;/,
     `export const SOCIALS: Social[] = [\n${formatSocials(next.socials)}\n] as const;`
   );
   await fs.writeFile(CONSTANTS_PATH, constants, "utf8");
 
-  await fs.writeFile(
-    ABOUT_PATH,
-    [
-      "---",
-      "layout: ../layouts/AboutLayout.astro",
-      `title: ${JSON.stringify(next.about.title.trim() || "About")}`,
-      "---",
-      "",
-      next.about.body.trim(),
-      "",
-    ].join("\n"),
-    "utf8"
-  );
-
   return readSettings();
 };
-
 export const adminDevServer = () => ({
   name: "local-writing-admin",
   apply: "serve",
@@ -491,8 +534,19 @@ export const adminDevServer = () => ({
         }
 
         if (req.method === "PUT" && url.pathname === "/api/admin/settings") {
-          const payload = JSON.parse(await readRequestBody(req) || "{}");
+          const payload = JSON.parse((await readRequestBody(req)) || "{}");
           json(res, 200, { settings: await updateSettings(payload) });
+          return;
+        }
+
+        if (req.method === "GET" && url.pathname === "/api/admin/pages/about") {
+          json(res, 200, { page: await readPage() });
+          return;
+        }
+
+        if (req.method === "PUT" && url.pathname === "/api/admin/pages/about") {
+          const payload = JSON.parse((await readRequestBody(req)) || "{}");
+          json(res, 200, { page: await updatePage(payload) });
           return;
         }
 
@@ -505,13 +559,13 @@ export const adminDevServer = () => ({
         }
 
         if (req.method === "POST" && url.pathname === "/api/admin/posts") {
-          const payload = JSON.parse(await readRequestBody(req) || "{}");
+          const payload = JSON.parse((await readRequestBody(req)) || "{}");
           json(res, 201, { post: await createPost(payload) });
           return;
         }
 
         if (req.method === "PUT" && postMatch) {
-          const payload = JSON.parse(await readRequestBody(req) || "{}");
+          const payload = JSON.parse((await readRequestBody(req)) || "{}");
           json(res, 200, { post: await updatePost(postMatch[1], payload) });
           return;
         }

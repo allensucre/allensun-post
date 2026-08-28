@@ -15,6 +15,9 @@ import Layout from "@/layouts/Layout.astro";
       <div class="topbar-actions">
         <a class="ghost-link" href="/posts/">View posts</a>
         <button id="posts-mode-button" type="button">Posts</button>
+        <button id="pages-mode-button" class="ghost-button" type="button"
+          >Pages</button
+        >
         <button id="settings-mode-button" class="ghost-button" type="button">
           Settings
         </button>
@@ -181,17 +184,58 @@ import Layout from "@/layouts/Layout.astro";
             ></textarea>
           </label>
 
+          <p id="settings-state" aria-live="polite">Settings ready</p>
+        </form>
+
+        <form
+          id="pages-form"
+          class="settings-form page-form admin-view"
+          data-view="pages"
+          hidden
+        >
+          <div class="settings-heading">
+            <div>
+              <p class="eyebrow">Pages</p>
+              <h2>About page</h2>
+            </div>
+            <div class="page-actions">
+              <a
+                class="ghost-link"
+                href="/about/"
+                target="_blank"
+                rel="noreferrer">View page</a
+              >
+              <button id="save-page-button" type="submit">Save page</button>
+            </div>
+          </div>
+
           <label>
-            About page title
-            <input id="setting-about-title" />
-          </label>
-          <label>
-            About page body
-            <textarea id="setting-about-body" rows="12" spellcheck="false"
-            ></textarea>
+            Page title
+            <input id="page-title" />
           </label>
 
-          <p id="settings-state" aria-live="polite">Settings ready</p>
+          <div
+            class="workspace-tabs"
+            role="tablist"
+            aria-label="Page editor mode"
+          >
+            <button type="button" data-page-mode="edit">Edit</button>
+            <button type="button" data-page-mode="preview">Preview</button>
+            <button type="button" class="active" data-page-mode="split"
+              >Split</button
+            >
+          </div>
+
+          <div class="writing-surface page-writing-surface" data-mode="split">
+            <textarea
+              id="page-body-input"
+              spellcheck="false"
+              placeholder="Write your About page in Markdown..."></textarea>
+            <article id="page-markdown-preview" class="markdown-preview">
+            </article>
+          </div>
+
+          <p id="pages-state" aria-live="polite">Pages ready</p>
         </form>
       </section>
     </section>
@@ -238,12 +282,14 @@ import Layout from "@/layouts/Layout.astro";
   .editor-actions,
   .file-line,
   .browser-meta,
-  .workspace-tabs {
+  .workspace-tabs,
+  .page-actions {
     display: flex;
     align-items: center;
   }
 
-  .topbar-actions {
+  .topbar-actions,
+  .page-actions {
     gap: 10px;
     flex-wrap: wrap;
   }
@@ -438,7 +484,7 @@ import Layout from "@/layouts/Layout.astro";
   }
 
   #setting-socials,
-  #setting-about-body {
+  #page-body-input {
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     line-height: 1.55;
@@ -528,11 +574,12 @@ import Layout from "@/layouts/Layout.astro";
   }
 
   .writing-surface[data-mode="edit"] .markdown-preview,
-  .writing-surface[data-mode="preview"] #body-input {
+  .writing-surface[data-mode="preview"] textarea {
     display: none;
   }
 
   #body-input,
+  #page-body-input,
   .markdown-preview {
     min-width: 0;
     min-height: 0;
@@ -543,7 +590,8 @@ import Layout from "@/layouts/Layout.astro";
     box-sizing: border-box;
   }
 
-  #body-input {
+  #body-input,
+  #page-body-input {
     resize: none;
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -710,7 +758,9 @@ import Layout from "@/layouts/Layout.astro";
     selectedId: null,
     selectedPost: null,
     settings: null,
+    page: null,
     mode: "edit",
+    pageMode: "split",
     view: "posts",
   };
 
@@ -724,6 +774,14 @@ import Layout from "@/layouts/Layout.astro";
     form: document.querySelector("#editor-form"),
     list: document.querySelector("#post-list"),
     newPost: document.querySelector("#new-post-button"),
+    pageBody: document.querySelector("#page-body-input"),
+    pageForm: document.querySelector("#pages-form"),
+    pagePreview: document.querySelector("#page-markdown-preview"),
+    pageState: document.querySelector("#pages-state"),
+    pageSurface: document.querySelector(".page-writing-surface"),
+    pageTabs: document.querySelectorAll("[data-page-mode]"),
+    pageTitle: document.querySelector("#page-title"),
+    pagesMode: document.querySelector("#pages-mode-button"),
     postsMode: document.querySelector("#posts-mode-button"),
     postCount: document.querySelector("#post-count"),
     preview: document.querySelector("#markdown-preview"),
@@ -733,8 +791,6 @@ import Layout from "@/layouts/Layout.astro";
     settingsForm: document.querySelector("#settings-form"),
     settingsMode: document.querySelector("#settings-mode-button"),
     settingsState: document.querySelector("#settings-state"),
-    settingAboutBody: document.querySelector("#setting-about-body"),
-    settingAboutTitle: document.querySelector("#setting-about-title"),
     settingAuthor: document.querySelector("#setting-author"),
     settingDesc: document.querySelector("#setting-desc"),
     settingHomeHeading: document.querySelector("#setting-home-heading"),
@@ -805,31 +861,47 @@ import Layout from "@/layouts/Layout.astro";
     elements.settingsState.textContent = message;
   };
 
+  const setPagesStatus = message => {
+    elements.pageState.textContent = message;
+  };
+
   const setAdminView = view => {
     state.view = view;
     elements.form.hidden = view !== "posts";
+    elements.pageForm.hidden = view !== "pages";
     elements.settingsForm.hidden = view !== "settings";
     elements.postsMode.classList.toggle("active", view === "posts");
+    elements.pagesMode.classList.toggle("active", view === "pages");
     elements.settingsMode.classList.toggle("active", view === "settings");
     elements.newPost.hidden = view !== "posts";
+
+    if (view === "pages" && !state.page) {
+      loadPage().catch(error => setPagesStatus(error.message));
+    }
 
     if (view === "settings" && !state.settings) {
       loadSettings().catch(error => setSettingsStatus(error.message));
     }
   };
 
-  const renderPreview = async () => {
+  const renderMarkdownPreview = async (source, target) => {
     const renderId = ++previewRenderId;
 
     try {
-      const html = await markdownToHtml(elements.body.value || "");
-      if (renderId === previewRenderId) elements.preview.innerHTML = html;
+      const html = await markdownToHtml(source.value || "");
+      if (renderId === previewRenderId) target.innerHTML = html;
     } catch (error) {
       if (renderId === previewRenderId) {
-        elements.preview.innerHTML = `<p class="preview-error">Markdown preview failed: ${escapeHtml(error.message || "Unknown error")}</p>`;
+        target.innerHTML = `<p class="preview-error">Markdown preview failed: ${escapeHtml(error.message || "Unknown error")}</p>`;
       }
     }
   };
+
+  const renderPreview = () =>
+    renderMarkdownPreview(elements.body, elements.preview);
+
+  const renderPagePreview = () =>
+    renderMarkdownPreview(elements.pageBody, elements.pagePreview);
 
   const filteredPosts = () => {
     const query = elements.search.value.trim().toLowerCase();
@@ -921,8 +993,6 @@ import Layout from "@/layouts/Layout.astro";
       null,
       2
     );
-    elements.settingAboutTitle.value = settings.about?.title || "";
-    elements.settingAboutBody.value = settings.about?.body || "";
     setSettingsStatus("Settings ready");
   };
 
@@ -961,15 +1031,38 @@ import Layout from "@/layouts/Layout.astro";
           socialLabel: elements.settingSocialLabel.value.trim(),
         },
         socials,
-        about: {
-          title: elements.settingAboutTitle.value.trim(),
-          body: elements.settingAboutBody.value,
-        },
       }),
     });
 
     populateSettings(data.settings);
     setSettingsStatus(`Saved ${new Date().toLocaleTimeString()}`);
+  };
+
+  const populatePage = page => {
+    state.page = page;
+    elements.pageTitle.value = page.title || "About";
+    elements.pageBody.value = page.body || "";
+    void renderPagePreview();
+    setPagesStatus("Page ready");
+  };
+
+  const loadPage = async () => {
+    setPagesStatus("Loading page");
+    const data = await request("/api/admin/pages/about");
+    populatePage(data.page);
+  };
+
+  const savePage = async () => {
+    setPagesStatus("Saving page");
+    const data = await request("/api/admin/pages/about", {
+      method: "PUT",
+      body: JSON.stringify({
+        title: elements.pageTitle.value.trim(),
+        body: elements.pageBody.value,
+      }),
+    });
+    populatePage(data.page);
+    setPagesStatus(`Saved ${new Date().toLocaleTimeString()}`);
   };
 
   const createDraft = async () => {
@@ -1030,6 +1123,9 @@ import Layout from "@/layouts/Layout.astro";
   elements.body.addEventListener("input", () => {
     void renderPreview();
   });
+  elements.pageBody.addEventListener("input", () => {
+    void renderPagePreview();
+  });
   elements.newPost.addEventListener("click", () => {
     setAdminView("posts");
     createDraft().catch(error => setStatus(error.message));
@@ -1042,7 +1138,12 @@ import Layout from "@/layouts/Layout.astro";
     event.preventDefault();
     saveSettings().catch(error => setSettingsStatus(error.message));
   });
+  elements.pageForm.addEventListener("submit", event => {
+    event.preventDefault();
+    savePage().catch(error => setPagesStatus(error.message));
+  });
   elements.postsMode.addEventListener("click", () => setAdminView("posts"));
+  elements.pagesMode.addEventListener("click", () => setAdminView("pages"));
   elements.settingsMode.addEventListener("click", () =>
     setAdminView("settings")
   );
@@ -1055,6 +1156,17 @@ import Layout from "@/layouts/Layout.astro";
         tab.classList.toggle("active", tab === button)
       );
       void renderPreview();
+    });
+  });
+
+  elements.pageTabs.forEach(button => {
+    button.addEventListener("click", () => {
+      state.pageMode = button.dataset.pageMode;
+      elements.pageSurface.dataset.mode = state.pageMode;
+      elements.pageTabs.forEach(tab =>
+        tab.classList.toggle("active", tab === button)
+      );
+      void renderPagePreview();
     });
   });
 
