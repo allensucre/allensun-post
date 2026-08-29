@@ -279,6 +279,15 @@ const createPost = async (payload: any) => {
   }));
 };
 
+const deletePost = async (id: string) => {
+  const { absolutePath, normalized } = assertSafePostPath(decodeId(id));
+  await fs.unlink(absolutePath);
+  return {
+    deleted: { id, filePath: normalized },
+    posts: await listPosts(),
+  };
+};
+
 const updatePost = async (id: string, payload: any) => {
   const { absolutePath } = assertSafePostPath(decodeId(id));
   const existing = await summarizePost(absolutePath);
@@ -567,6 +576,11 @@ export const adminDevServer = () => ({
         if (req.method === "PUT" && postMatch) {
           const payload = JSON.parse((await readRequestBody(req)) || "{}");
           json(res, 200, { post: await updatePost(postMatch[1], payload) });
+          return;
+        }
+
+        if (req.method === "DELETE" && postMatch) {
+          json(res, 200, await deletePost(postMatch[1]));
           return;
         }
 

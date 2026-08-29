@@ -117,7 +117,17 @@ import Layout from "@/layouts/Layout.astro";
 
           <footer class="editor-actions">
             <p id="save-state" aria-live="polite">Ready</p>
-            <button id="save-button" type="submit">Save</button>
+            <div class="editor-command-group">
+              <button
+                id="delete-post-button"
+                class="danger-button"
+                type="button"
+                disabled
+              >
+                Delete
+              </button>
+              <button id="save-button" type="submit">Save</button>
+            </div>
           </footer>
         </form>
 
@@ -280,6 +290,7 @@ import Layout from "@/layouts/Layout.astro";
 
   .topbar-actions,
   .editor-actions,
+  .editor-command-group,
   .file-line,
   .browser-meta,
   .workspace-tabs,
@@ -699,6 +710,27 @@ import Layout from "@/layouts/Layout.astro";
     gap: 12px;
   }
 
+  .editor-command-group {
+    gap: 10px;
+  }
+
+  .danger-button {
+    border-color: #9f1239;
+    background: transparent;
+    color: #9f1239;
+  }
+
+  .danger-button:hover:not(:disabled),
+  .danger-button:focus-visible:not(:disabled) {
+    background: #9f1239;
+    color: #fff;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
   #save-state,
   #settings-state {
     margin: 0;
@@ -768,6 +800,7 @@ import Layout from "@/layouts/Layout.astro";
     apiState: document.querySelector("#api-state"),
     body: document.querySelector("#body-input"),
     date: document.querySelector("#date-input"),
+    deletePost: document.querySelector("#delete-post-button"),
     description: document.querySelector("#description-input"),
     draft: document.querySelector("#draft-input"),
     filePath: document.querySelector("#file-path"),
@@ -934,6 +967,22 @@ import Layout from "@/layouts/Layout.astro";
       .join("");
   };
 
+  const clearEditor = () => {
+    state.selectedId = null;
+    state.selectedPost = null;
+    elements.title.value = "";
+    elements.description.value = "";
+    elements.date.value = new Date().toISOString();
+    elements.tags.value = "";
+    elements.draft.checked = true;
+    elements.body.value = "";
+    elements.filePath.textContent = "No post selected";
+    elements.previewLink.href = "/posts/";
+    elements.deletePost.disabled = true;
+    void renderPreview();
+    renderList();
+  };
+
   const populateEditor = post => {
     state.selectedId = post.id;
     state.selectedPost = post;
@@ -943,6 +992,7 @@ import Layout from "@/layouts/Layout.astro";
     elements.tags.value = (post.tags || []).join(", ");
     elements.draft.checked = Boolean(post.draft);
     elements.body.value = post.body || "";
+    elements.deletePost.disabled = false;
     elements.filePath.textContent = post.filePath || "New post";
     elements.previewLink.href = post.slug ? postUrl(post) : "/posts/";
     void renderPreview();
@@ -965,6 +1015,7 @@ import Layout from "@/layouts/Layout.astro";
       renderList();
 
       if (state.posts[0]) await loadPost(state.posts[0].id);
+      else clearEditor();
     } catch (error) {
       elements.apiState.textContent = "API unavailable";
       elements.list.innerHTML = `
@@ -1085,6 +1136,31 @@ import Layout from "@/layouts/Layout.astro";
     setStatus("Draft created");
   };
 
+  const deleteCurrentPost = async () => {
+    if (!state.selectedId || !state.selectedPost) return;
+
+    const confirmed = window.confirm(
+      `Delete "${state.selectedPost.title}"? This removes the Markdown file from src/data/blog.`
+    );
+    if (!confirmed) return;
+
+    setStatus("Deleting");
+    const deletedId = state.selectedId;
+    const data = await request(`/api/admin/posts/${deletedId}`, {
+      method: "DELETE",
+    });
+
+    state.posts =
+      data.posts || state.posts.filter(post => post.id !== deletedId);
+    renderList();
+
+    const nextPost = filteredPosts()[0] || state.posts[0];
+    if (nextPost) await loadPost(nextPost.id);
+    else clearEditor();
+
+    setStatus(`Deleted ${new Date().toLocaleTimeString()}`);
+  };
+
   const saveCurrentPost = async () => {
     if (!state.selectedId) return;
 
@@ -1129,6 +1205,9 @@ import Layout from "@/layouts/Layout.astro";
   elements.newPost.addEventListener("click", () => {
     setAdminView("posts");
     createDraft().catch(error => setStatus(error.message));
+  });
+  elements.deletePost.addEventListener("click", () => {
+    deleteCurrentPost().catch(error => setStatus(error.message));
   });
   elements.form.addEventListener("submit", event => {
     event.preventDefault();
