@@ -13,15 +13,17 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@astrojs/rss": "^4.0.14",
-    "@astrojs/sitemap": "^3.6.0",
+    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.1.18",
-    "astro": "^5.16.6",
+    "astro": "^7.3.2",
     "dayjs": "^1.11.19",
     "dompurify": "^3.4.14",
     "lodash.kebabcase": "^4.1.1",
     "marked": "^18.0.11",
+    "remark-breaks": "^4.0.0",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
     "satori": "^0.18.3",
@@ -30,9 +32,9 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.10",
     "@pagefind/default-ui": "^1.4.0",
-    "@shikijs/transformers": "^3.20.0",
+    "@shikijs/transformers": "^4.4.3",
     "@tailwindcss/typography": "^0.5.19",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.51.0",

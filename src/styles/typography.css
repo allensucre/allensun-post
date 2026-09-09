@@ -1,6 +1,6 @@
 @plugin "@tailwindcss/typography";
 
-@layer base {
+@layer components {
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
     @apply prose;
@@ -32,7 +32,7 @@
     }
 
     ul {
-      @apply overflow-x-clip;
+      overflow: visible;
     }
 
     li {
@@ -87,6 +87,9 @@
     }
 
     pre {
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: pre;
       @apply focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-dashed;
     }
   }
@@ -115,5 +118,45 @@
     .highlighted-word {
       @apply rounded-sm border border-border px-0.5 py-px;
     }
+  }
+}
+
+@layer components {
+  .app-prose {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .app-prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* Keep list markers visible after resets, including nested Markdown lists. */
+@layer components {
+  .app-prose ul {
+    list-style-type: disc;
+    padding-inline-start: 1.625em;
+  }
+  .app-prose ol {
+    list-style-type: decimal;
+    padding-inline-start: 1.625em;
+  }
+  .app-prose ul ul {
+    list-style-type: circle;
+  }
+  .app-prose ul ul ul {
+    list-style-type: square;
+  }
+  .app-prose li {
+    display: list-item;
+  }
+  .app-prose li.task-list-item {
+    list-style-type: none;
+  }
+  .app-prose li > input[type="checkbox"] {
+    width: auto;
+    margin-inline-end: 0.5em;
   }
 }

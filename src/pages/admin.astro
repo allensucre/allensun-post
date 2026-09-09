@@ -2,108 +2,110 @@
 import Layout from "@/layouts/Layout.astro";
 ---
 
-<Layout
-  title="Writing Admin"
-  description="Local writing workspace for Markdown blog posts."
->
+<Layout title="写作后台" description="博客写作与站点管理">
   <main class="admin-shell">
     <header class="admin-topbar">
       <div>
-        <p class="eyebrow">Local writing workspace</p>
-        <h1>Writing Admin</h1>
+        <h1>写作后台</h1>
       </div>
       <div class="topbar-actions">
-        <a class="ghost-link" href="/posts/">View posts</a>
-        <button id="posts-mode-button" type="button">Posts</button>
+        <button id="posts-mode-button" type="button">博客文章</button>
         <button id="pages-mode-button" class="ghost-button" type="button"
-          >Pages</button
+          >个人简介</button
         >
         <button id="settings-mode-button" class="ghost-button" type="button">
-          Settings
+          站点设置
         </button>
-        <button id="new-post-button" type="button">New post</button>
+        <a class="ghost-link" href="/" target="_blank" rel="noreferrer"
+          >查看博客</a
+        >
       </div>
     </header>
 
     <section class="admin-grid">
-      <aside class="post-browser" aria-label="Post browser">
+      <aside class="post-browser" aria-label="博客文章列表">
+        <div class="browser-heading">
+          <h2>文章</h2><button id="new-post-button" type="button"
+            >新建文章</button>
+        </div>
         <div class="browser-tools">
           <label>
-            Search
+            搜索
             <input
               id="search-input"
               type="search"
-              placeholder="Title, tag, path"
+              placeholder="搜索标题、标签或路径"
             />
           </label>
           <label>
-            Status
+            发表状态
             <select id="status-filter">
-              <option value="all">All posts</option>
-              <option value="draft">Drafts</option>
-              <option value="published">Published</option>
+              <option value="all">全部文章</option>
+              <option value="draft">草稿</option>
+              <option value="published">已发表</option>
             </select>
           </label>
         </div>
         <div class="browser-meta">
-          <span id="post-count">0 posts</span>
-          <span id="api-state">Connecting</span>
+          <span id="post-count">0 篇文章</span>
+          <span id="api-state">连接中</span>
         </div>
         <div id="post-list" class="post-list" role="list"></div>
       </aside>
 
-      <section class="editor-panel" aria-label="Post editor">
+      <section class="editor-panel" aria-label="文章编辑">
         <form id="editor-form" class="editor-form admin-view" data-view="posts">
           <div class="form-row title-row">
             <label>
-              Title
+              标题
               <input id="title-input" name="title" required />
             </label>
             <label class="draft-toggle">
               <input id="draft-input" name="draft" type="checkbox" />
-              Draft
+              草稿
             </label>
           </div>
 
-          <div class="form-row">
-            <label>
-              Description
-              <textarea id="description-input" name="description" rows="2"
-              ></textarea>
-            </label>
-          </div>
+          <details class="post-options">
+            <summary>发布信息</summary>
+            <div class="form-row">
+              <label>
+                摘要
+                <textarea id="description-input" name="description" rows="2"
+                ></textarea>
+              </label>
+            </div>
 
-          <div class="form-row split-row">
-            <label>
-              Published time
-              <input id="date-input" name="pubDatetime" type="text" />
-            </label>
-            <label>
-              Tags
-              <input
-                id="tags-input"
-                name="tags"
-                placeholder="产品, 社区, 随想"
-              />
-            </label>
-          </div>
+            <div class="form-row split-row">
+              <label>
+                发表时间
+                <input id="date-input" name="pubDatetime" type="text" />
+              </label>
+              <label>
+                标签
+                <input
+                  id="tags-input"
+                  name="tags"
+                  placeholder="产品, 社区, 随想"
+                />
+              </label>
+            </div>
 
-          <div class="file-line">
-            <span id="file-path">No post selected</span>
-            <a
-              id="preview-link"
-              href="/posts/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Preview
-            </a>
-          </div>
-
-          <div class="workspace-tabs" role="tablist" aria-label="Editor mode">
-            <button type="button" class="active" data-mode="edit">Edit</button>
-            <button type="button" data-mode="preview">Preview</button>
-            <button type="button" data-mode="split">Split</button>
+            <div class="file-line">
+              <span id="file-path">尚未选择文章</span>
+              <a
+                id="preview-link"
+                href="/posts/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                查看已保存文章
+              </a>
+            </div>
+          </details>
+          <div class="workspace-tabs" role="group" aria-label="文章编辑模式">
+            <button type="button" class="active" data-mode="edit">写作</button>
+            <button type="button" data-mode="preview">预览</button>
           </div>
 
           <div class="writing-surface" data-mode="edit">
@@ -111,12 +113,13 @@ import Layout from "@/layouts/Layout.astro";
               id="body-input"
               name="body"
               spellcheck="false"
-              placeholder="Start writing Markdown..."></textarea>
-            <article id="markdown-preview" class="markdown-preview"></article>
+              placeholder="开始撰写正文…"></textarea>
+            <article id="markdown-preview" class="markdown-preview app-prose">
+            </article>
           </div>
 
           <footer class="editor-actions">
-            <p id="save-state" aria-live="polite">Ready</p>
+            <p id="save-state" aria-live="polite">就绪</p>
             <div class="editor-command-group">
               <button
                 id="delete-post-button"
@@ -124,9 +127,9 @@ import Layout from "@/layouts/Layout.astro";
                 type="button"
                 disabled
               >
-                Delete
+                删除文章
               </button>
-              <button id="save-button" type="submit">Save</button>
+              <button id="save-button" type="submit">保存文章</button>
             </div>
           </footer>
         </form>
@@ -139,62 +142,60 @@ import Layout from "@/layouts/Layout.astro";
         >
           <div class="settings-heading">
             <div>
-              <p class="eyebrow">Site settings</p>
-              <h2>Homepage, identity, and links</h2>
+              <p class="eyebrow">站点设置</p>
+              <h2>首页与社交信息</h2>
             </div>
-            <button id="save-settings-button" type="submit"
-              >Save settings</button
-            >
+            <button id="save-settings-button" type="submit">保存设置</button>
           </div>
 
           <div class="settings-grid">
             <label>
-              Site title
+              博客名称
               <input id="setting-title" name="title" />
             </label>
             <label>
-              Author
+              作者
               <input id="setting-author" name="author" />
             </label>
             <label>
-              Website URL
+              博客网址
               <input id="setting-website" name="website" />
             </label>
             <label>
-              Profile URL
+              个人主页链接
               <input id="setting-profile" name="profile" />
             </label>
           </div>
 
           <label>
-            Site description
+            博客简介
             <textarea id="setting-desc" rows="2"></textarea>
           </label>
 
           <label>
-            Homepage heading
+            首页标题
             <input id="setting-home-heading" />
           </label>
           <label>
-            Homepage intro
+            首页介绍
             <textarea id="setting-home-intro" rows="4"></textarea>
           </label>
           <label>
-            Homepage secondary paragraph
+            首页补充介绍
             <textarea id="setting-home-secondary" rows="3"></textarea>
           </label>
           <label>
-            Social label
+            社交链接标题
             <input id="setting-social-label" />
           </label>
 
           <label>
-            Social links JSON
+            社交链接（JSON）
             <textarea id="setting-socials" rows="8" spellcheck="false"
             ></textarea>
           </label>
 
-          <p id="settings-state" aria-live="polite">Settings ready</p>
+          <p id="settings-state" aria-live="polite">设置已加载</p>
         </form>
 
         <form
@@ -205,47 +206,48 @@ import Layout from "@/layouts/Layout.astro";
         >
           <div class="settings-heading">
             <div>
-              <p class="eyebrow">Pages</p>
-              <h2>About page</h2>
+              <h2>个人简介</h2>
             </div>
             <div class="page-actions">
               <a
                 class="ghost-link"
                 href="/about/"
                 target="_blank"
-                rel="noreferrer">View page</a
+                rel="noreferrer">查看个人简介</a
               >
-              <button id="save-page-button" type="submit">Save page</button>
+              <button id="save-page-button" type="submit">保存简介</button>
             </div>
           </div>
 
           <label>
-            Page title
+            简介标题
             <input id="page-title" />
           </label>
 
           <div
             class="workspace-tabs"
-            role="tablist"
-            aria-label="Page editor mode"
+            role="group"
+            aria-label="个人简介编辑模式"
           >
-            <button type="button" data-page-mode="edit">Edit</button>
-            <button type="button" data-page-mode="preview">Preview</button>
-            <button type="button" class="active" data-page-mode="split"
-              >Split</button
+            <button type="button" class="active" data-page-mode="edit"
+              >写作</button
             >
+            <button type="button" data-page-mode="preview">预览</button>
           </div>
 
-          <div class="writing-surface page-writing-surface" data-mode="split">
+          <div class="writing-surface page-writing-surface" data-mode="edit">
             <textarea
               id="page-body-input"
               spellcheck="false"
-              placeholder="Write your About page in Markdown..."></textarea>
-            <article id="page-markdown-preview" class="markdown-preview">
+              placeholder="撰写个人简介…"></textarea>
+            <article
+              id="page-markdown-preview"
+              class="markdown-preview app-prose"
+            >
             </article>
           </div>
 
-          <p id="pages-state" aria-live="polite">Pages ready</p>
+          <p id="pages-state" aria-live="polite">简介已就绪</p>
         </form>
       </section>
     </section>
@@ -253,13 +255,51 @@ import Layout from "@/layouts/Layout.astro";
 </Layout>
 
 <style>
+  .admin-shell [hidden] {
+    display: none !important;
+  }
+  .admin-grid.single-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .browser-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    gap: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  .browser-heading h2 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .post-options {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 12px;
+  }
+  .post-options summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+  }
+  .post-options[open] > .form-row {
+    margin-top: 14px;
+  }
+  .markdown-preview {
+    max-width: none;
+    --foreground: #242424;
+    --background: #fff;
+    --muted: #eee;
+    --border: #ddd;
+    --accent: #006cac;
+  }
   :global(body) {
     min-width: 320px;
   }
 
   .admin-shell {
     min-height: 100vh;
-    background: #f6f5f1;
+    background: #f5f6f7;
     color: #242424;
     padding: 24px;
   }
@@ -284,7 +324,7 @@ import Layout from "@/layouts/Layout.astro";
 
   h1 {
     margin: 0;
-    font-size: clamp(1.7rem, 3vw, 2.4rem);
+    font-size: 22px;
     line-height: 1.1;
   }
 
@@ -347,7 +387,7 @@ import Layout from "@/layouts/Layout.astro";
   .editor-panel {
     border: 1px solid #d8d2c7;
     border-radius: 8px;
-    background: #fffdfa;
+    background: #fff;
     min-height: calc(100vh - 128px);
   }
 
@@ -615,91 +655,6 @@ import Layout from "@/layouts/Layout.astro";
     line-height: 1.75;
   }
 
-  .markdown-preview :global(h1),
-  .markdown-preview :global(h2),
-  .markdown-preview :global(h3) {
-    margin: 1.2em 0 0.5em;
-    line-height: 1.25;
-  }
-
-  .markdown-preview :global(p) {
-    margin: 0.8em 0;
-  }
-
-  .markdown-preview :global(code) {
-    background: #f0ece5;
-    border-radius: 4px;
-    padding: 0.1em 0.3em;
-  }
-
-  .markdown-preview :global(pre) {
-    overflow: auto;
-    background: #242424;
-    color: #fff;
-    border-radius: 6px;
-    padding: 14px;
-  }
-
-  .markdown-preview :global(a) {
-    color: #7c2d12;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .markdown-preview :global(ul),
-  .markdown-preview :global(ol) {
-    margin: 0.8em 0 0.8em 1.4em;
-    padding: 0;
-  }
-
-  .markdown-preview :global(li) {
-    margin: 0.35em 0;
-  }
-
-  .markdown-preview :global(blockquote) {
-    margin: 1em 0;
-    border-left: 3px solid #c2b8a8;
-    color: #5f574d;
-    padding-left: 1em;
-  }
-
-  .markdown-preview :global(hr) {
-    border: 0;
-    border-top: 1px solid #d8d2c7;
-    margin: 1.5em 0;
-  }
-
-  .markdown-preview :global(img) {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    border-radius: 6px;
-    margin: 1em 0;
-  }
-
-  .markdown-preview :global(table) {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1em 0;
-    font-size: 0.95rem;
-  }
-
-  .markdown-preview :global(th),
-  .markdown-preview :global(td) {
-    border: 1px solid #d8d2c7;
-    padding: 0.55em 0.7em;
-    text-align: left;
-    vertical-align: top;
-  }
-
-  .markdown-preview :global(th) {
-    background: #f6f1e8;
-  }
-
-  .markdown-preview :global(input[type="checkbox"]) {
-    margin-right: 0.45em;
-  }
-
   .markdown-preview :global(.preview-error) {
     color: #9f1239;
     font-weight: 600;
@@ -792,7 +747,7 @@ import Layout from "@/layouts/Layout.astro";
     settings: null,
     page: null,
     mode: "edit",
-    pageMode: "split",
+    pageMode: "edit",
     view: "posts",
   };
 
@@ -838,7 +793,7 @@ import Layout from "@/layouts/Layout.astro";
     surface: document.querySelector(".writing-surface"),
     tags: document.querySelector("#tags-input"),
     title: document.querySelector("#title-input"),
-    tabs: document.querySelectorAll(".workspace-tabs button"),
+    tabs: document.querySelectorAll("button[data-mode]"),
   };
 
   const request = async (url, options = {}) => {
@@ -850,7 +805,7 @@ import Layout from "@/layouts/Layout.astro";
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || "Request failed");
+      throw new Error(data.error || "请求失败");
     }
 
     return data;
@@ -882,7 +837,7 @@ import Layout from "@/layouts/Layout.astro";
     });
   };
 
-  let previewRenderId = 0;
+  const previewRenderIds = new WeakMap();
 
   const postUrl = post => `/posts/${post.slug}/`;
 
@@ -900,6 +855,10 @@ import Layout from "@/layouts/Layout.astro";
 
   const setAdminView = view => {
     state.view = view;
+    document.querySelector(".post-browser").hidden = view !== "posts";
+    document
+      .querySelector(".admin-grid")
+      .classList.toggle("single-view", view !== "posts");
     elements.form.hidden = view !== "posts";
     elements.pageForm.hidden = view !== "pages";
     elements.settingsForm.hidden = view !== "settings";
@@ -918,14 +877,15 @@ import Layout from "@/layouts/Layout.astro";
   };
 
   const renderMarkdownPreview = async (source, target) => {
-    const renderId = ++previewRenderId;
+    const renderId = (previewRenderIds.get(target) || 0) + 1;
+    previewRenderIds.set(target, renderId);
 
     try {
       const html = await markdownToHtml(source.value || "");
-      if (renderId === previewRenderId) target.innerHTML = html;
+      if (renderId === previewRenderIds.get(target)) target.innerHTML = html;
     } catch (error) {
-      if (renderId === previewRenderId) {
-        target.innerHTML = `<p class="preview-error">Markdown preview failed: ${escapeHtml(error.message || "Unknown error")}</p>`;
+      if (renderId === previewRenderIds.get(target)) {
+        target.innerHTML = `<p class="preview-error">Markdown 预览失败： ${escapeHtml(error.message || "未知错误")}</p>`;
       }
     }
   };
@@ -954,13 +914,13 @@ import Layout from "@/layouts/Layout.astro";
 
   const renderList = () => {
     const posts = filteredPosts();
-    elements.postCount.textContent = `${posts.length} posts`;
+    elements.postCount.textContent = `${posts.length} 篇文章`;
     elements.list.innerHTML = posts
       .map(
         post => `
         <button class="post-item ${post.id === state.selectedId ? "active" : ""}" data-id="${post.id}" type="button">
           <strong class="post-title">${escapeHtml(post.title)}</strong>
-          <span class="post-meta">${escapeHtml(post.pubDatetime.slice(0, 10))} · ${post.draft ? "Draft" : "Published"}</span>
+          <span class="post-meta">${escapeHtml(post.pubDatetime.slice(0, 10))} · ${post.draft ? "草稿" : "已发表"}</span>
         </button>
       `
       )
@@ -976,7 +936,7 @@ import Layout from "@/layouts/Layout.astro";
     elements.tags.value = "";
     elements.draft.checked = true;
     elements.body.value = "";
-    elements.filePath.textContent = "No post selected";
+    elements.filePath.textContent = "尚未选择文章";
     elements.previewLink.href = "/posts/";
     elements.deletePost.disabled = true;
     void renderPreview();
@@ -993,34 +953,34 @@ import Layout from "@/layouts/Layout.astro";
     elements.draft.checked = Boolean(post.draft);
     elements.body.value = post.body || "";
     elements.deletePost.disabled = false;
-    elements.filePath.textContent = post.filePath || "New post";
+    elements.filePath.textContent = post.filePath || "新建文章";
     elements.previewLink.href = post.slug ? postUrl(post) : "/posts/";
     void renderPreview();
     renderList();
-    setStatus("Ready");
+    setStatus("就绪");
   };
 
   const loadPost = async id => {
-    setStatus("Loading post");
+    setStatus("正在加载文章");
     const data = await request(`/api/admin/posts/${id}`);
     populateEditor(data.post);
   };
 
   const loadPosts = async () => {
     try {
-      elements.apiState.textContent = "Connecting";
+      elements.apiState.textContent = "连接中";
       const data = await request("/api/admin/posts");
       state.posts = data.posts;
-      elements.apiState.textContent = "Local API ready";
+      elements.apiState.textContent = "已连接";
       renderList();
 
       if (state.posts[0]) await loadPost(state.posts[0].id);
       else clearEditor();
     } catch (error) {
-      elements.apiState.textContent = "API unavailable";
+      elements.apiState.textContent = "连接失败";
       elements.list.innerHTML = `
         <p class="post-item">
-          The writing API only runs in local dev mode. Start the blog with
+          本地写作服务未连接，请启动服务：
           <code>corepack pnpm run dev --host 127.0.0.1</code>.
         </p>
       `;
@@ -1044,25 +1004,24 @@ import Layout from "@/layouts/Layout.astro";
       null,
       2
     );
-    setSettingsStatus("Settings ready");
+    setSettingsStatus("设置已加载");
   };
 
   const loadSettings = async () => {
-    setSettingsStatus("Loading settings");
+    setSettingsStatus("正在加载设置");
     const data = await request("/api/admin/settings");
     populateSettings(data.settings);
   };
 
   const saveSettings = async () => {
-    setSettingsStatus("Saving settings");
+    setSettingsStatus("正在保存设置");
 
     let socials = [];
     try {
       socials = JSON.parse(elements.settingSocials.value || "[]");
-      if (!Array.isArray(socials))
-        throw new Error("Social links must be an array");
+      if (!Array.isArray(socials)) throw new Error("社交链接必须是数组");
     } catch (error) {
-      throw new Error(`Social links JSON is invalid: ${error.message}`);
+      throw new Error(`社交链接 JSON 格式错误： ${error.message}`);
     }
 
     const data = await request("/api/admin/settings", {
@@ -1086,25 +1045,25 @@ import Layout from "@/layouts/Layout.astro";
     });
 
     populateSettings(data.settings);
-    setSettingsStatus(`Saved ${new Date().toLocaleTimeString()}`);
+    setSettingsStatus(`已保存 ${new Date().toLocaleTimeString("zh-CN")}`);
   };
 
   const populatePage = page => {
     state.page = page;
-    elements.pageTitle.value = page.title || "About";
+    elements.pageTitle.value = page.title || "个人简介";
     elements.pageBody.value = page.body || "";
     void renderPagePreview();
-    setPagesStatus("Page ready");
+    setPagesStatus("简介已加载");
   };
 
   const loadPage = async () => {
-    setPagesStatus("Loading page");
+    setPagesStatus("正在加载简介");
     const data = await request("/api/admin/pages/about");
     populatePage(data.page);
   };
 
   const savePage = async () => {
-    setPagesStatus("Saving page");
+    setPagesStatus("正在保存简介");
     const data = await request("/api/admin/pages/about", {
       method: "PUT",
       body: JSON.stringify({
@@ -1113,7 +1072,7 @@ import Layout from "@/layouts/Layout.astro";
       }),
     });
     populatePage(data.page);
-    setPagesStatus(`Saved ${new Date().toLocaleTimeString()}`);
+    setPagesStatus(`已保存 ${new Date().toLocaleTimeString("zh-CN")}`);
   };
 
   const createDraft = async () => {
@@ -1133,18 +1092,18 @@ import Layout from "@/layouts/Layout.astro";
 
     state.posts = [data.post, ...state.posts];
     populateEditor(data.post);
-    setStatus("Draft created");
+    setStatus("草稿已创建");
   };
 
   const deleteCurrentPost = async () => {
     if (!state.selectedId || !state.selectedPost) return;
 
     const confirmed = window.confirm(
-      `Delete "${state.selectedPost.title}"? This removes the Markdown file from src/data/blog.`
+      `确定删除“${state.selectedPost.title}”吗？这将删除对应的文章文件。`
     );
     if (!confirmed) return;
 
-    setStatus("Deleting");
+    setStatus("正在删除");
     const deletedId = state.selectedId;
     const data = await request(`/api/admin/posts/${deletedId}`, {
       method: "DELETE",
@@ -1158,13 +1117,13 @@ import Layout from "@/layouts/Layout.astro";
     if (nextPost) await loadPost(nextPost.id);
     else clearEditor();
 
-    setStatus(`Deleted ${new Date().toLocaleTimeString()}`);
+    setStatus(`已删除 ${new Date().toLocaleTimeString("zh-CN")}`);
   };
 
   const saveCurrentPost = async () => {
     if (!state.selectedId) return;
 
-    setStatus("Saving");
+    setStatus("正在保存");
     const payload = {
       title: elements.title.value.trim(),
       description: elements.description.value.trim(),
@@ -1185,7 +1144,7 @@ import Layout from "@/layouts/Layout.astro";
       post.id === data.post.id ? data.post : post
     );
     populateEditor(data.post);
-    setStatus(`Saved ${new Date().toLocaleTimeString()}`);
+    setStatus(`已保存 ${new Date().toLocaleTimeString("zh-CN")}`);
   };
 
   elements.list.addEventListener("click", event => {
