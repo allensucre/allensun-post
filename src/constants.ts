@@ -22,6 +22,24 @@ export const SOCIALS: Social[] = [
     linkTitle: `${SITE.title} on GitHub`,
     icon: IconGitHub,
   },
+  {
+    name: "WhatsApp",
+    href: "https://wa.me/?text=",
+    linkTitle: `Share this post via WhatsApp`,
+    icon: IconGitHub,
+  },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/sharer.php?u=",
+    linkTitle: `Share this post on Facebook`,
+    icon: IconGitHub,
+  },
+  {
+    name: "X",
+    href: "https://x.com/intent/post?url=",
+    linkTitle: `Share this post on X`,
+    icon: IconBrandX,
+  },
 ] as const;
 
 export const SHARE_LINKS: Social[] = [
